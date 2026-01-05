@@ -17,6 +17,7 @@ GLuint compile_shader_part(const char* source, GLenum type) {
         exit(1);
     }
 
+    check_opengl_errors();
     return shader;
 }
 
@@ -47,8 +48,7 @@ GLuint make_shader(const char* src_vert, const char* src_frag) {
     glDeleteShader(vertex_shader);
     glDeleteShader(fragment_shader);
 
-    shader_set_block_bindings(shader_program);
-
+    check_opengl_errors();
     return shader_program;
 }
 

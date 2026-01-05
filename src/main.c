@@ -18,6 +18,7 @@
 
 #include <stdbool.h>
 
+#include "utils.h"
 #include "defer.h"
 #include "ubo.h"
 
@@ -49,6 +50,8 @@ GLuint empty_VAO;
 bool alpha_dim = false;
 
 void draw_stroke() {
+    printf("draw_stroke()\n");
+
     glBindFramebuffer(GL_FRAMEBUFFER, FBO); DEFER(glBindFramebuffer(GL_FRAMEBUFFER, 0));
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, TEX_backbuffer, 0);
     glUseProgram(shader_stroke); DEFER(glUseProgram(0));
@@ -56,19 +59,29 @@ void draw_stroke() {
     glBindVertexArray(empty_VAO); DEFER(glBindVertexArray(0));
     //                        rectangle + circle
     glDrawArrays(GL_TRIANGLES, 0, 2 * 3 + 2 * 3);
+
+    check_opengl_errors();
 }
 
 void draw_box() {
+    printf("draw_box()\n");
+
     glBindFramebuffer(GL_FRAMEBUFFER, FBO); DEFER(glBindFramebuffer(GL_FRAMEBUFFER, 0));
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, TEX_backbuffer, 0);
     glUseProgram(shader_box); DEFER(glUseProgram(0));
 
     glBindVertexArray(empty_VAO); DEFER(glBindVertexArray(0));
     glDrawArrays(GL_TRIANGLES, 0, 2 * 3);
+
+    check_opengl_errors();
 }
 
 void show_backbuffer() {
-    glClearColor(0.0f, 0.f, 0.f, alpha_dim ? .1f : 0.f);
+    printf("show_backbuffer()\n");
+    {
+        float f = alpha_dim ? .2f : 0.f;
+        glClearColor(f * .5f, f * .5f, f * .5f, f);
+    }
     glClear(GL_COLOR_BUFFER_BIT);
 
     glEnable(GL_BLEND); DEFER(glDisable(GL_BLEND));
@@ -82,6 +95,8 @@ void show_backbuffer() {
     glBindTexture(GL_TEXTURE_2D, TEX_backbuffer);
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    check_opengl_errors();
 }
 
 int main(void) {
@@ -90,29 +105,40 @@ int main(void) {
     SHARED_SHADER_DATA.stroke_scale = 5;
 
     RGFW_glHints* hints = RGFW_getGlobalHints_OpenGL();
+    printf("setup pt. 1\n");
     hints->major = 4;
     hints->minor = 2;
     RGFW_setGlobalHints_OpenGL(hints);
 
+    printf("setup pt. 2\n");
+
 	RGFW_window* window = RGFW_createWindow("screenpen", SCR_WIDTH, SCR_HEIGHT, SCR_WIDTH, SCR_HEIGHT, RGFW_windowAllowDND | RGFW_windowCenter | RGFW_windowScaleToMonitor | RGFW_windowOpenGL | RGFW_windowTransparent);
     DEFER(RGFW_window_close(window));
+
+    printf("setup pt. 3\n");
     SHARED_SHADER_DATA.window_size = (ivec2){window->w, window->h};
 
     RGFW_window_setFullscreen(window, true);
+    printf("setup pt. 4\n");
+
     if (window == NULL) {
         printf("Failed to create RGFW window\n");
         return -1;
     }
     RGFW_window_setExitKey(window, RGFW_escape);
+    printf("setup pt. 5\n");
     RGFW_window_makeCurrentContext_OpenGL(window);
-
+    printf("setup pt. 6\n");
 
     int version = gladLoadGL(/*RGFW_getProcAddress_OpenGL*/);
+    printf("setup pt. 7\n");
     if (version == 0) {
         printf("Failed to initialize OpenGL context\n");
         return -1;
     }
 
+    printf("context setup done\n");
+    check_opengl_errors();
 
     GLuint test_shader = make_shader(vertexShaderSource, fragmentShaderSource);
     DEFER(glDeleteProgram(test_shader));
@@ -135,12 +161,12 @@ int main(void) {
     glGenVertexArrays(1, &empty_VAO);
     DEFER(glDeleteVertexArrays(1, &empty_VAO));
 
-
     GLuint UBO_shared_shader_data = ubo_make(0, Shared_Shader_Data);
     DEFER(ubo_deinit(UBO_shared_shader_data));
     ubo_load(UBO_shared_shader_data, SHARED_SHADER_DATA);
 
     { // make texture
+        printf("creating backbuffer\n");
         glGenTextures(1, &TEX_backbuffer);
         glBindTexture(GL_TEXTURE_2D, TEX_backbuffer);
             glTexImage2D(
@@ -157,6 +183,8 @@ int main(void) {
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glBindTexture(GL_TEXTURE_2D, 0);
+
+        check_opengl_errors();
     }
     DEFER(glDeleteTextures(1, &TEX_backbuffer));
 
@@ -164,12 +192,16 @@ int main(void) {
     DEFER(glDeleteBuffers(1, &FBO));
 
     {
+        printf("creating FBO\n");
+
         glBindFramebuffer(GL_FRAMEBUFFER, FBO);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, TEX_backbuffer, 0);
 
         glClearColor(0.f, 0.f, 0.f, .0f);
         glClear(GL_COLOR_BUFFER_BIT);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    
+        check_opengl_errors();
     }
 
     bool mouse_down = false;
@@ -183,6 +215,9 @@ int main(void) {
     }
 
     glViewport(0, 0, window->w, window->h);
+
+    printf("loop prepare done\n");
+    check_opengl_errors();
 
     while(RGFW_window_shouldClose(window) == RGFW_FALSE) {
         RGFW_event event;
@@ -319,6 +354,7 @@ int main(void) {
                     break;
             }
         }
+        check_opengl_errors();
 
         show_backbuffer();
 
@@ -337,11 +373,11 @@ int main(void) {
                 glDrawArrays(GL_TRIANGLES, 0, 6);                
             }
         }
+        check_opengl_errors();
 
         RGFW_window_swapBuffers_OpenGL(window);
 
-        GLenum code = glGetError();
-        assert(code == GL_NO_ERROR);
+        check_opengl_errors();
     }
 
     return 0;
