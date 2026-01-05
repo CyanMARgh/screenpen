@@ -1,3 +1,6 @@
+#ifndef _DEFER_H
+#define _DEFER_H
+
 #define DEFER_MERGE(a, b) a##b
 #define DEFER_VARNAME(a) DEFER_MERGE(defer_scopevar_, a)
 #define DEFER_FUNCNAME(a) DEFER_MERGE(defer_scopefunc_, a)
@@ -15,3 +18,5 @@
     dosomethingwith(data);
   }
 */
+
+  #endif
