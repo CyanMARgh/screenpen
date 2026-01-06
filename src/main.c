@@ -41,7 +41,7 @@ int mode = SHAPE_BRUSH;
 Shared_Shader_Data SHARED_SHADER_DATA;
 GLuint FBO;
 GLuint TEX_backbuffer;
-GLuint shader_line;
+// GLuint shader_line;
 GLuint shader_stroke;
 GLuint shader_copy_texture;
 GLuint shader_cursor;
@@ -140,11 +140,8 @@ int main(void) {
     printf("context setup done\n");
     check_opengl_errors();
 
-    GLuint test_shader = make_shader(vertexShaderSource, fragmentShaderSource);
-    DEFER(glDeleteProgram(test_shader));
-
-    shader_line = make_shader(line_vert, line_frag);
-    DEFER(glDeleteProgram(shader_line));
+    // shader_line = make_shader(line_vert, line_frag);
+    // DEFER(glDeleteProgram(shader_line));
 
     shader_stroke = make_shader(vert_stroke, frag_stroke);
     DEFER(glDeleteProgram(shader_stroke));
@@ -232,7 +229,14 @@ int main(void) {
                     int key = event.key.value;
                     printf("Key pressed %c\n", event.key.value);
                     if(key >= '1' && key <= '9') {
-                        SHARED_SHADER_DATA.color = key - '1';
+                        SHARED_SHADER_DATA.color = key - '0';
+                        ubo_load(UBO_shared_shader_data, SHARED_SHADER_DATA);
+                        if(mode == SHAPE_ERASER) {
+                            mode = SHAPE_BRUSH; // disabling "eraser mode"
+                        }
+                    } else if(key == '0') {
+                        SHARED_SHADER_DATA.color = 0;
+                        mode = SHAPE_ERASER;
                         ubo_load(UBO_shared_shader_data, SHARED_SHADER_DATA);
                     } else if(key == '-') {
                         SHARED_SHADER_DATA.stroke_scale = SHARED_SHADER_DATA.stroke_scale > 2 ? SHARED_SHADER_DATA.stroke_scale - 2 : 2;
@@ -243,8 +247,16 @@ int main(void) {
                     } else if(key == 'a') {
                         alpha_dim ^= true;
                     } else if(key == 'b') {
+                        if(!SHARED_SHADER_DATA.color) { // disabling "eraser" color
+                            SHARED_SHADER_DATA.color = 1;
+                            ubo_load(UBO_shared_shader_data, SHARED_SHADER_DATA);
+                        }
                         mode = SHAPE_BOX;
                     } else if(key == 'p') {
+                        if(!SHARED_SHADER_DATA.color) { // disabling "eraser" color
+                            SHARED_SHADER_DATA.color = 1;
+                            ubo_load(UBO_shared_shader_data, SHARED_SHADER_DATA);
+                        }
                         mode = SHAPE_BRUSH;
                     }
                     break;
@@ -262,7 +274,7 @@ int main(void) {
 
                     ubo_load(UBO_shared_shader_data, SHARED_SHADER_DATA);
 
-                    if(mode == SHAPE_BRUSH) {
+                    if(mode == SHAPE_BRUSH || mode == SHAPE_ERASER) {
                         draw_stroke();
                     }
                     break;
@@ -282,7 +294,7 @@ int main(void) {
                     ubo_load(UBO_shared_shader_data, SHARED_SHADER_DATA);
 
                     // draw line
-                    if(mouse_down && mode == SHAPE_BRUSH) {
+                    if(mouse_down && (mode == SHAPE_BRUSH || mode == SHAPE_ERASER)) {
                         draw_stroke();
                     }
                     break;
@@ -358,7 +370,7 @@ int main(void) {
 
         show_backbuffer();
 
-        if(!mouse_down) {
+        if(!mouse_down || mode == SHAPE_ERASER) {
             glUseProgram(shader_cursor); DEFER(glUseProgram(0));
             glBindVertexArray(empty_VAO); DEFER(glBindVertexArray(0));
 

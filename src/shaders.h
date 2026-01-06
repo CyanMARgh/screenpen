@@ -73,92 +73,6 @@ void shader_set_block_bindings(GLuint shader) {
     }
 }
 
-const char *vertexShaderSource = MULTILINE_STR(
-\x23version 420 core\n
-layout(location = 0) in vec3 a_pos;
-
-void main() {
-    gl_Position = vec4(a_pos.xyz, 1);
-}
-);
-
-const char *fragmentShaderSource = MULTILINE_STR(
-\x23version 420 core\n
-out vec4 o_color;
-
-vec4 pma(vec4 c) {
-    return vec4(c.rgb * c.a, c.a);
-}
-
-void main() {
-    o_color = pma(vec4(1, 0, 0, 0.1));
-}
-);
-
-
-
-const char *line_vert = MULTILINE_STR(
-    \x23version 420 core\n
-
-    layout(location = 0) in vec3 a_pos;
-
-    const vec3 A = vec3(0, 0, 0);
-    const vec3 B = vec3(1, 1, 0);
-
-    layout(std140) uniform Shared_Shader_Data {
-        ivec2 mouse_old;
-        ivec2 mouse_new;
-        ivec2 mouse_stored;
-        ivec2 window_size;
-
-        int active_shape;
-        int color;
-
-        int stroke_scale;
-    };
-
-    void main() {
-        ivec2 ip = gl_VertexID == 0 ? mouse_new : mouse_old;
-        vec2 p = (vec2(ip) / vec2(window_size)) * vec2(2, -2) + vec2(-1, 1);
-        gl_Position = vec4(p, 0, 1);
-    }
-);
-// TODO hardcoded size
-
-const char *line_frag = MULTILINE_STR(
-    \x23version 420 core\n
-
-    out vec4 o_color;
-
-    layout(std140) uniform Shared_Shader_Data {
-        ivec2 mouse_old;
-        ivec2 mouse_new;
-        ivec2 mouse_stored;
-        ivec2 window_size;
-
-        int active_shape;
-        int color;
-
-        int stroke_scale;
-    };
-
-    vec3 colors_map[] = vec3[](
-        vec3(1, 0, 0),
-        vec3(0, 1, 0),
-        vec3(0, 0, 1),
-        vec3(0, 0, 0),
-        vec3(1, 1, 0),
-        vec3(0, 1, 1),
-        vec3(1, 0, 1),
-        vec3(1, 0.5, 0),
-        vec3(1, 1, 1)
-    );
-
-    void main() {
-        o_color = vec4(colors_map[color], 1);
-    }
-);
-
 const char *copy_texture_vert = MULTILINE_STR(
     \x23version 420 core\n
 
@@ -272,16 +186,17 @@ const char *frag_stroke = MULTILINE_STR(
         int stroke_scale;
     };
 
-    vec3 colors_map[] = vec3[](
-        vec3(1, 0, 0),
-        vec3(0, 1, 0),
-        vec3(0, 0, 1),
-        vec3(0, 0, 0),
-        vec3(1, 1, 0),
-        vec3(0, 1, 1),
-        vec3(1, 0, 1),
-        vec3(1, 0.5, 0),
-        vec3(1, 1, 1)
+    vec4 colors_map[] = vec4[](
+        vec4(0, 0, 0, 0),
+        vec4(1, 0, 0, 1),
+        vec4(0, 1, 0, 1),
+        vec4(0, 0, 1, 1),
+        vec4(0, 0, 0, 1),
+        vec4(1, 1, 0, 1),
+        vec4(0, 1, 1, 1),
+        vec4(1, 0, 1, 1),
+        vec4(1,.5, 0, 1),
+        vec4(1, 1, 1, 1)
     );
 
     in vec2 vo_uv;
@@ -290,7 +205,7 @@ const char *frag_stroke = MULTILINE_STR(
         if(vo_uv.x * vo_uv.x + vo_uv.y * vo_uv.y > 1) {
             discard;
         }
-        o_color = vec4(colors_map[color], 1);
+        o_color = colors_map[color];
     }
 );
 
@@ -352,6 +267,7 @@ const char *frag_cursor = MULTILINE_STR(
     };
 
     vec3 colors_map[] = vec3[](
+        vec3(.5, .5, .5),
         vec3(1, 0, 0),
         vec3(0, 1, 0),
         vec3(0, 0, 1),
@@ -434,6 +350,7 @@ const char *frag_box = MULTILINE_STR(
     };
 
     vec3 colors_map[] = vec3[](
+        vec3(0, 0, 0), //unused
         vec3(1, 0, 0),
         vec3(0, 1, 0),
         vec3(0, 0, 1),
