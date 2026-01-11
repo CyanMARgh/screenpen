@@ -118,7 +118,6 @@ int main(void) {
     printf("setup pt. 3\n");
     SHARED_SHADER_DATA.window_size = (ivec2){window->w, window->h};
 
-    RGFW_window_setFullscreen(window, true);
     printf("setup pt. 4\n");
 
     if (window == NULL) {
@@ -258,6 +257,8 @@ int main(void) {
                             ubo_load(UBO_shared_shader_data, SHARED_SHADER_DATA);
                         }
                         mode = SHAPE_BRUSH;
+                    } else if(key == RGFW_F11) {
+                        RGFW_window_setFullscreen(window, !RGFW_window_isFullscreen(window));
                     }
                     break;
                 case RGFW_keyReleased:
@@ -289,6 +290,7 @@ int main(void) {
                     // printf("Mouse Button scroll %f %f\n", (double)event.scroll.x, (double)event.scroll.y);
                     break;
                 case RGFW_mousePosChanged:
+                    printf("mouse position changed\n");
                     SHARED_SHADER_DATA.mouse_old = SHARED_SHADER_DATA.mouse_new;
                     SHARED_SHADER_DATA.mouse_new = (ivec2){event.mouse.x, event.mouse.y};
                     ubo_load(UBO_shared_shader_data, SHARED_SHADER_DATA);
@@ -351,9 +353,9 @@ int main(void) {
                     // printf("Refresh\n");
                     break;
                 case RGFW_dataDrop: {
-                    for(int i = 0; i < event.drop.count; i++) {
+                    // for(int i = 0; i < event.drop.count; i++) {
                         // printf("dropped : %s\n", event.drop.files[i]);
-                    }
+                    // }
                     break;
                 }
                 case RGFW_dataDrag:
