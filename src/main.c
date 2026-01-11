@@ -188,8 +188,7 @@ int main(void) {
     DEFER(glDeleteBuffers(1, &FBO));
 
     {
-        printf("creating FBO\n");
-
+        printf("clearing backbuffer\n");
         glBindFramebuffer(GL_FRAMEBUFFER, FBO);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, TEX_backbuffer, 0);
 
@@ -326,6 +325,19 @@ int main(void) {
                             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
                         glBindTexture(GL_TEXTURE_2D, 0);
                     }
+
+                    {
+                        printf("clearing backbuffer\n");
+                        glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+                        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, TEX_backbuffer, 0);
+
+                        glClearColor(0.f, 0.f, 0.f, .0f);
+                        glClear(GL_COLOR_BUFFER_BIT);
+                        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                    
+                        check_opengl_errors();
+                    }
+
 
                     break;
                 case RGFW_windowMaximized:
